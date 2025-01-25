@@ -65,7 +65,7 @@ class Home extends StatelessWidget {
                       MaterialPageRoute(builder: (context) => const Dictionary()),
                     );
                   },
-                  child: _pageButton(context, Icons.settings, "Practice"),
+                    child: _pageButton(context, Icons.edit, "Practice"),
                 ),
               ],
             ),
