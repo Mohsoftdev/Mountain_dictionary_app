@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mountain_other/pages/dictionary.dart';
+import 'package:mountain_other/pages/practice.dart';
 
 class Home extends StatelessWidget {
   const Home({super.key});
@@ -62,7 +63,7 @@ class Home extends StatelessWidget {
                 GestureDetector(
                   onTap: () {
                     Navigator.of(context).push(
-                      MaterialPageRoute(builder: (context) => const Dictionary()),
+                      MaterialPageRoute(builder: (context) => const Practice()),
                     );
                   },
                     child: _pageButton(context, Icons.edit, "Practice"),
