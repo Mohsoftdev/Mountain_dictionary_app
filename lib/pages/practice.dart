@@ -53,6 +53,8 @@ class Practice extends StatelessWidget {
             ', torn between acceptance and resistance. The resolution, it seemed, was still far out of reach'
       }
     };
+
+    
     return Scaffold(
         appBar: AppBar(
           backgroundColor: Color(0xFF044D64),
@@ -78,81 +80,147 @@ class Practice extends StatelessWidget {
           ),
         ),
         endDrawer: Drawer(),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  double widthFactor = constraints.maxWidth > 600 ? 0.3 : 0.7;
-                  return Container(
-                    width: MediaQuery.of(context).size.width * widthFactor,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Flexible(child: _levelButton('Easy')),
-                        Flexible(child: _levelButton('Normal')),
-                        Flexible(child: _levelButton('Hard'))
-                      ],
-                    ),
-                  );
-                },
-              ),
-              SizedBox(
-                height: 20.0,
-              ),
-              Container(
-                padding: const EdgeInsets.all(12.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.green),
-                  borderRadius: BorderRadius.circular(10.0),
+        body: SingleChildScrollView(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    double widthFactor =
+                        constraints.maxWidth > 700 ? 0.35 : 0.9;
+                    return Container(
+                      margin: const EdgeInsets.all(10.0),
+                      width: MediaQuery.of(context).size.width * widthFactor,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Flexible(child: _levelButton('Easy')),
+                          Flexible(child: _levelButton('Normal')),
+                          Flexible(child: _levelButton('Hard'))
+                        ],
+                      ),
+                    );
+                  },
                 ),
-                child: Text(
-                  words.join(' - '),
-                  style: TextStyle(fontSize: 16),
+                SizedBox(
+                  height: 20.0,
                 ),
-              ),
-              SizedBox(
-                height: 20.0,
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Container(
+                Container(
+                  margin: const EdgeInsets.all(10.0),
                   padding: const EdgeInsets.all(12.0),
                   decoration: BoxDecoration(
-                    border: Border.all(color: Color(0xFF044D64)),
+                    border: Border.all(color: Colors.green),
                     borderRadius: BorderRadius.circular(10.0),
                   ),
-                  constraints: BoxConstraints(
-                      maxWidth: MediaQuery.of(context).size.width * 1.0),
-                  child: Wrap(
-                    alignment: WrapAlignment.start,
-                    runAlignment: WrapAlignment.start,
-                    spacing: 8.0,
-                    runSpacing: 8.0,
-                    children: content.entries.map<Widget>((entry) {
-                      return Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '${entry.value['before']} ',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                          SizedBox(
-                            width: 100,
-                            child: TextField(),
-                          ),
-                          Text(
-                            '${entry.value['after']}.',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                        ],
-                      );
-                    }).toList(),
+                  child: Text(
+                    words.join(' - '),
+                    style: TextStyle(fontSize: 16),
                   ),
                 ),
-              ),
-            ],
+                SizedBox(
+                  height: 20.0,
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(12.0),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Color(0xFF044D64)),
+                      borderRadius: BorderRadius.circular(10.0),
+                    ),
+                    constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 1.0),
+                    child: Wrap(
+                      alignment: WrapAlignment.start,
+                      runAlignment: WrapAlignment.start,
+                      spacing: 5.0,
+                      runSpacing: 5.0,
+                      children: content.entries.map<Widget>((entry) {
+                        return Wrap(
+                          children: [
+                            ...?entry.value['before']?.split(' ').map<Widget>((word) {
+                              return Text(
+                                '$word ',
+                                style: TextStyle(fontSize: 16, height: 1.5),
+                              );
+                            }),
+                            Container(
+                              width: 120,
+                              margin: const EdgeInsets.symmetric(
+                                  horizontal: 5.0, vertical: 0.0),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.blue),
+                                borderRadius: BorderRadius.circular(5.0),
+                              ),
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxHeight: 20,
+                                ),
+                                child: TextField(
+                                  decoration: InputDecoration(
+                                    contentPadding: EdgeInsets.symmetric(
+                                        vertical: 15.0, horizontal: 5.0),
+                                    border: InputBorder.none,
+                                  ),
+                                  style: TextStyle(fontSize: 14, height: 1.5),
+                                ),
+                              ),
+                            ),
+                            ...entry.value['after']!
+                                .split(' ')
+                                .map<Widget>((word) {
+                              return Text(
+                                '$word ',
+                                style: TextStyle(fontSize: 16, height: 1.5),
+                              );
+                            }),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                SizedBox(
+                  height: 20.0,
+                ),
+                Column(
+                  children: words.map((word) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 5.0),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 100, // Fixed width based on the longest word
+                            child: Text(
+                              word,
+                              style: TextStyle(fontSize: 16),
+                            ),
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.blue),
+                                borderRadius: BorderRadius.circular(5.0),
+                              ),
+                              child: TextField(
+                                decoration: InputDecoration(
+                                  contentPadding: EdgeInsets.symmetric(
+                                      vertical: 15.0, horizontal: 5.0),
+                                  border: InputBorder.none,
+                                ),
+                                style: TextStyle(fontSize: 14, height: 1.5),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
           ),
         ));
   }
