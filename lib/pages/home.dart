@@ -15,6 +15,9 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   bool isLoggedIn = false;
+  int _wordCount = 0;
+  bool _isLoading = false;
+  final ApiService _apiService = ApiService(baseUrl: 'http://127.0.0.1:8000');
 
   @override
   void initState() {
@@ -22,17 +25,51 @@ class _HomeState extends State<Home> {
     _checkLoginStatus();
   }
 
+  Future<void> _fetchWordCount() async {
+    if (!isLoggedIn) return;
+    
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final words = await _apiService.fetchWords();
+      if (mounted) {
+        setState(() {
+          _wordCount = words.length;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        // Only show error if user is logged in
+        if (isLoggedIn) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to load word count: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   Future<void> _checkLoginStatus() async {
-    final ApiService apiService = ApiService(baseUrl: 'http://127.0.0.1:8000/');
-    final token = await apiService.getToken();
+    final token = await _apiService.getToken();
     setState(() {
       isLoggedIn = token != null;
     });
+    if (isLoggedIn) {
+      _fetchWordCount();
+    }
   }
 
   Future<void> _checkTokenAndNavigate(BuildContext context, Widget page) async {
-    final ApiService apiService = ApiService(baseUrl: 'http://127.0.0.1:8000/');
-    final token = await apiService.getToken();
+    final token = await _apiService.getToken();
 
     if (token == null) {
       Navigator.push(
@@ -48,10 +85,10 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> _logout(BuildContext context) async {
-    final ApiService apiService = ApiService(baseUrl: 'http://127.0.0.1:8000/');
-    await apiService.removeToken();
+    await _apiService.removeToken();
     setState(() {
       isLoggedIn = false;
+      _wordCount = 0;
     });
     Navigator.pushReplacement(
       context,
@@ -199,44 +236,47 @@ class _HomeState extends State<Home> {
           ),
         ),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              alignment: WrapAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: () =>
-                      _checkTokenAndNavigate(context, const AddWordPage()),
-                  child: _pageButton(context, Icons.add, "New"),
-                ),
-                GestureDetector(
-                  onTap: () =>
-                      _checkTokenAndNavigate(context, const Dictionary()),
-                  child: _pageButton(context, Icons.book, "Dictionary"),
-                ),
-                GestureDetector(
-                  onTap: () =>
-                      _checkTokenAndNavigate(context, const Practice()),
-                  child: _pageButton(context, Icons.edit, "Practice"),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                _statCard(context, "Total", "243", 0xFFFFC9AE, 0xFFFFEFE7,
-                    0xFFFF9A68),
-                _statCard(context, "Practice", "23", 0xFFFFC6F2, 0xFFFDEBF9,
-                    0xFFFF8AE4),
-              ],
-            ),
-          ],
+      body: RefreshIndicator(
+        onRefresh: _fetchWordCount,
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                alignment: WrapAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: () =>
+                        _checkTokenAndNavigate(context, const AddWordPage()),
+                    child: _pageButton(context, Icons.add, "New"),
+                  ),
+                  GestureDetector(
+                    onTap: () =>
+                        _checkTokenAndNavigate(context, const Dictionary()),
+                    child: _pageButton(context, Icons.book, "Dictionary"),
+                  ),
+                  GestureDetector(
+                    onTap: () =>
+                        _checkTokenAndNavigate(context, const Practice()),
+                    child: _pageButton(context, Icons.edit, "Practice"),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  _statCard(context, "Total", _isLoading ? "..." : "$_wordCount", 0xFFFFC9AE, 0xFFFFEFE7,
+                      0xFFFF9A68),
+                  _statCard(context, "Practice", "23", 0xFFFFC6F2, 0xFFFDEBF9,
+                      0xFFFF8AE4),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

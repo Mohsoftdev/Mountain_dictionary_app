@@ -16,7 +16,7 @@ class ApiService {
       }
 
       final response = await http.get(
-        Uri.parse('$baseUrl$endpoint'),
+        Uri.parse('$baseUrl/${endpoint.startsWith('/') ? endpoint.substring(1) : endpoint}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -39,31 +39,36 @@ class ApiService {
     }
   }
 
-  Future<dynamic> post(String endpoint, Map<String, dynamic> data) async {
+  Future<dynamic> post(String endpoint, Map<String, dynamic> data, {bool requiresAuth = true}) async {
     try {
-      final token = await getToken();
-      if (token == null) {
-        throw Exception('No token available');
+      Map<String, String> headers = {
+        'Content-Type': 'application/json',
+      };
+
+      if (requiresAuth) {
+        final token = await getToken();
+        if (token == null) {
+          throw Exception('No token available');
+        }
+        headers['Authorization'] = 'Bearer $token';
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl$endpoint'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
+        Uri.parse('$baseUrl/${endpoint.startsWith('/') ? endpoint.substring(1) : endpoint}'),
+        headers: headers,
         body: json.encode(data),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return json.decode(response.body);
-      } else if (response.statusCode == 401) {
+      } else if (response.statusCode == 401 && requiresAuth) {
         // Token expired, try to refresh
         await refreshToken();
         // Retry the request with new token
-        return post(endpoint, data);
+        return post(endpoint, data, requiresAuth: requiresAuth);
       } else {
-        throw Exception('Failed to post data: ${response.body}');
+        final errorBody = json.decode(response.body);
+        throw Exception(errorBody['detail'] ?? 'Failed to post data: ${response.body}');
       }
     } catch (e) {
       print('POST request error: $e');
