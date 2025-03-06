@@ -1,21 +1,19 @@
+// filepath: /C:/app_development/flutter/mountain_other/lib/main.dart
 import 'package:flutter/material.dart';
-import 'package:mountain_other/pages/home.dart';
-// import 'package:flutter/rendering.dart';
+import 'package:mountain_other/route_generator.dart';
 
 void main() {
-  // debugPaintSizeEnabled = true;
-  runApp(const MaterialApp(
-    
-      home: Home()
-    ));
+  runApp(const MyApp());
 }
 
-// class MyApp extends StatelessWidget {f
-//   const MyApp({super.key});
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
 
-//   // This widget is the root of your application.
-//   @override
-//   Widget build(BuildContext context) {
-//     return 
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      initialRoute: '/',
+      onGenerateRoute: RouteGenerator.generateRoute,
+    );
+  }
+}

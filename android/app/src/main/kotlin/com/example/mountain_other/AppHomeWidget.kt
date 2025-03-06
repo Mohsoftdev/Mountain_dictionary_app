@@ -14,7 +14,6 @@ class AppHomeWidget : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        // There may be multiple widgets active, so update all of them
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
         }
@@ -28,6 +27,7 @@ class AppHomeWidget : AppWidgetProvider() {
         // Enter relevant functionality for when the last widget is disabled
     }
 }
+
 
 internal fun updateAppWidget(
     context: Context,
