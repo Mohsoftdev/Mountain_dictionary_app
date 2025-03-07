@@ -133,26 +133,33 @@ class ApiService {
 
   Future<void> login(String usernameOrEmail, String password) async {
     try {
+      print('Making login request with: $usernameOrEmail'); // Debug print
+      
       final response = await http.post(
         Uri.parse('$baseUrl/api/token/'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({
-          'username_or_email': usernameOrEmail,
+        body: jsonEncode({
+          'username_or_email': usernameOrEmail, // Allow username or email
           'password': password,
         }),
       );
+      
+      print('Response status: ${response.statusCode}'); // Debug print
+      print('Response body: ${response.body}'); // Debug print
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        await saveToken(data['access']);
-        await saveRefreshToken(data['refresh']);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        if (data['access'] != null) {
+          await saveToken(data['access']);
+          await saveRefreshToken(data['refresh']);
+          print('Token saved successfully'); // Debug print
+        }
       } else {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['detail'] ?? 'Failed to login: ${response.statusCode}');
+        throw Exception('Login failed: ${response.body}');
       }
     } catch (e) {
-      print('Login error: $e');
-      rethrow;
+      print('Login error: $e'); // Debug print
+      throw Exception(e.toString());
     }
   }
 

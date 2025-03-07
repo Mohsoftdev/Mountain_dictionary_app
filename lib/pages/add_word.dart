@@ -13,6 +13,7 @@ class AddWordPage extends StatefulWidget {
 
 class _AddWordPageState extends State<AddWordPage> {
   final TextEditingController _wordController = TextEditingController();
+  final TextEditingController _meaningController = TextEditingController();
   final ApiService _apiService = ApiService(baseUrl: 'http://127.0.0.1:8000');
   List<String> _meanings = [];
   String? _selectedMeaning;
@@ -23,6 +24,7 @@ class _AddWordPageState extends State<AddWordPage> {
   @override
   void dispose() {
     _wordController.dispose();
+    _meaningController.dispose();
     _debounceTimer?.cancel();
     super.dispose();
   }
@@ -71,103 +73,91 @@ class _AddWordPageState extends State<AddWordPage> {
     _fetchMeanings();
   }
 
-  void _addWord() async {
-    if (_wordController.text.isEmpty) {
+  Future<void> _addWord() async {
+    if (_wordController.text.isEmpty || _meaningController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a word'))
-      );
-      return;
-    }
-
-    if (_selectedMeaning == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a meaning'))
+        const SnackBar(
+          content: Text('Please enter both word and meaning'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
 
     setState(() {
-      _isAdding = true;
+      _isLoading = true;
     });
 
-    // Show success dialog immediately
-    _showSuccessDialog();
-
     try {
-      await _apiService.post('/api/dictionary/', {
-        'word': _wordController.text,
-        'meaning': _selectedMeaning,
+      print('Attempting to add word: ${_wordController.text}'); // Debug print
+      print('With meaning: ${_meaningController.text}'); // Debug print
+
+      final response = await _apiService.post('/api/dictionary/', {
+        'word': _wordController.text.trim(),
+        'meaning': _meaningController.text.trim(),
       });
-    } catch (e) {
+
+      print('Add word response: $response'); // Debug print
+
       if (mounted) {
-        // If the API call fails, show error message
+        // Show success dialog
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Success'),
+            content: const Text('Word added successfully!'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+
+        // Clear the form
+        _wordController.clear();
+        _meaningController.clear();
+        setState(() {
+          _selectedMeaning = null;
+          _meanings = [];
+        });
+
+        // Return true to indicate success and update word count
+        Navigator.pop(context, true);
+      }
+    } catch (e) {
+      print('Error adding word: $e'); // Debug print
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to add word: $e'),
+            content: Text(_getErrorMessage(e.toString())),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
           ),
         );
       }
     } finally {
       if (mounted) {
         setState(() {
-          _isAdding = false;
+          _isLoading = false;
         });
       }
     }
   }
 
-  void _showSuccessDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        // Auto dismiss after 1.5 seconds
-        Future.delayed(const Duration(milliseconds: 1500), () {
-          if (mounted) {
-            Navigator.of(context).pop(); // Close dialog
-            Navigator.of(context).pop(); // Go back to previous screen
-          }
-        });
-
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.0),
-          ),
-          child: Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: Colors.lightGreen[50],
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.check_circle,
-                  color: Colors.green,
-                  size: 50,
-                ),
-                SizedBox(height: 20),
-                Text(
-                  'Word Added Successfully!',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green[700],
-                  ),
-                ),
-                SizedBox(height: 20),
-                LinearProgressIndicator(
-                  backgroundColor: Colors.green[100],
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  String _getErrorMessage(String error) {
+    if (error.contains('Word is already in your dictionary')) {
+      return 'This word is already in your dictionary';
+    } else if (error.contains('Invalid Word')) {
+      return 'This word was not found in the dictionary';
+    } else if (error.contains('Meaning does not match')) {
+      return 'The meaning provided does not match the word';
+    } else {
+      return 'Failed to add word. Please try again.';
+    }
   }
 
   @override
