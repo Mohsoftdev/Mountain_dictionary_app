@@ -1,8 +1,9 @@
 // filepath: /C:/app_development/flutter/mountain_other/lib/pages/add_word.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:mountain_other/api_service.dart';
+import '../api_service.dart';
 import 'dart:async';
+import '../config.dart';
 
 class AddWordPage extends StatefulWidget {
   const AddWordPage({super.key});
@@ -14,7 +15,7 @@ class AddWordPage extends StatefulWidget {
 class _AddWordPageState extends State<AddWordPage> {
   final TextEditingController _wordController = TextEditingController();
   final TextEditingController _meaningController = TextEditingController();
-  final ApiService _apiService = ApiService(baseUrl: 'http://127.0.0.1:8000');
+  final ApiService _apiService = ApiService(baseUrl: Config.apiBaseUrl);
   List<String> _meanings = [];
   String? _selectedMeaning;
   bool _isLoading = false;
@@ -59,10 +60,6 @@ class _AddWordPageState extends State<AddWordPage> {
     }
   }
 
-  void _onWordChanged(String value) {
-    // Remove automatic search
-  }
-
   void _handleSearch() {
     if (_wordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -74,7 +71,7 @@ class _AddWordPageState extends State<AddWordPage> {
   }
 
   Future<void> _addWord() async {
-    if (_wordController.text.isEmpty || _meaningController.text.isEmpty) {
+    if (_wordController.text.trim().isEmpty || _meaningController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please enter both word and meaning'),
@@ -84,67 +81,41 @@ class _AddWordPageState extends State<AddWordPage> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
     try {
-      print('Attempting to add word: ${_wordController.text}'); // Debug print
-      print('With meaning: ${_meaningController.text}'); // Debug print
-
-      final response = await _apiService.post('/api/dictionary/', {
-        'word': _wordController.text.trim(),
-        'meaning': _meaningController.text.trim(),
+      setState(() {
+        _isAdding = true;
       });
 
-      print('Add word response: $response'); // Debug print
-
-      if (mounted) {
-        // Show success dialog
-        await showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Success'),
-            content: const Text('Word added successfully!'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('OK'),
-              ),
-            ],
+      await _apiService.addWord(_wordController.text, _meaningController.text);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Word "${_wordController.text}" added successfully!',
+            style: TextStyle(color: Colors.white),
           ),
-        );
+          backgroundColor: Colors.green,
+        ),
+      );
+      _wordController.clear();
+      _meaningController.clear();
+      setState(() {
+        _selectedMeaning = null;
+        _meanings = [];
+      });
 
-        // Clear the form
-        _wordController.clear();
-        _meaningController.clear();
-        setState(() {
-          _selectedMeaning = null;
-          _meanings = [];
-        });
-
-        // Return true to indicate success and update word count
-        Navigator.pop(context, true);
-      }
+      await ApiService(baseUrl: Config.apiBaseUrl).updateWidget();
     } catch (e) {
-      print('Error adding word: $e'); // Debug print
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_getErrorMessage(e.toString())),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_getErrorMessage(e.toString())),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _isAdding = false;
+      });
     }
   }
 
@@ -181,7 +152,6 @@ class _AddWordPageState extends State<AddWordPage> {
                   onPressed: _handleSearch,
                 ),
               ),
-              onChanged: _onWordChanged,
               textInputAction: TextInputAction.search,
               onSubmitted: (_) => _handleSearch(),
             ),
@@ -202,6 +172,7 @@ class _AddWordPageState extends State<AddWordPage> {
                     onChanged: (value) {
                       setState(() {
                         _selectedMeaning = value;
+                        _meaningController.text = value ?? '';
                       });
                     },
                     items: _meanings.map((meaning) {

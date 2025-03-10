@@ -1,6 +1,7 @@
 // filepath: /C:/app_development/flutter/mountain_other/lib/pages/dictionary.dart
 import 'package:flutter/material.dart';
 import 'package:mountain_other/api_service.dart';
+import '../config.dart';
 
 class Dictionary extends StatefulWidget {
   const Dictionary({super.key});
@@ -12,7 +13,7 @@ class Dictionary extends StatefulWidget {
 class _DictionaryState extends State<Dictionary> {
   late Future<List<Map<String, dynamic>>> _wordsAndSentences;
   int _selectedLevel = 5;
-  final ApiService _apiService = ApiService(baseUrl: 'http://127.0.0.1:8000');
+  final ApiService _apiService = ApiService(baseUrl: Config.apiBaseUrl);
 
   @override
   void initState() {

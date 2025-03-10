@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 0.0.0+1  # First release version
+version: 0.1.0+2  # First release version
 
 environment:
   sdk: ^3.6.1
@@ -41,6 +41,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.13.1  # Use the latest version
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -101,3 +102,13 @@ flutter:
   #         weight: 300
   #       - asset: assets/fonts/Roboto-Medium.ttf
   #         weight: 500
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo_mark_white.png"  # Path to your new icon (1024x1024 recommended)
+  adaptive_icon_background: "#044D64" # Background color for adaptive icons
+  adaptive_icon_foreground: "assets/logo_mark_white.png" # Foreground image for adaptive icons
+  adaptive_icon_padding: true  # Adds automatic padding to adaptive icons
+  remove_alpha_ios: true  # Better appearance on iOS
+  min_sdk_android: 21

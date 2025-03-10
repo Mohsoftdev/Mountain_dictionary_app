@@ -2,11 +2,16 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'config.dart';
+import 'package:flutter/services.dart';
+import 'package:mountain_other/widget_helper.dart';
 
 class ApiService {
   final String baseUrl;
 
   ApiService({required this.baseUrl});
+
+  static const platform = MethodChannel('com.example.mountain_other/widget');
 
   Future<dynamic> get(String endpoint) async {
     try {
@@ -116,6 +121,8 @@ class ApiService {
           'refresh': refreshToken,
         }),
       );
+      // print('Response status: ${response.statusCode}'); // Debug print
+      // print('Response body: ${response.body}'); // Debug print
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -143,6 +150,7 @@ class ApiService {
           'password': password,
         }),
       );
+      
       
       print('Response status: ${response.statusCode}'); // Debug print
       print('Response body: ${response.body}'); // Debug print
@@ -187,5 +195,80 @@ class ApiService {
   Future<List<String>> fetchWordNetMeanings(String word) async {
     final data = await get('/api/meaning/$word/');
     return List<String>.from(data['meanings']);
+  }
+
+  Future<void> addWord(String word, String meaning) async {
+    try {
+      print('Word: $word'); // Debug print
+      print('Meaning: $meaning'); // Debug print
+
+      if (word.trim().isEmpty || meaning.trim().isEmpty) {
+        throw Exception('Please enter both word and meaning');
+      }
+
+      final response = await post('/api/dictionary/', {
+        'word': word.trim(),
+        'meaning': meaning.trim(),
+      });
+
+      print('Add word response: $response'); // Debug print
+    } catch (e) {
+      print('Error adding word: $e'); // Debug print
+      throw Exception('Failed to add word');
+    }
+  }
+
+  Future<void> updateWidget() async {
+    print('Starting widget update process...');
+    
+    try {
+      // Fetch words from the dictionary
+      List<Map<String, dynamic>> words = await fetchWords();
+      print('Fetched ${words.length} words for widget');
+      
+      if (words.isEmpty) {
+        print('No words found, using default values for widget');
+        // If no words are available, use default content
+        await WidgetHelper.updateWidget(
+          word: "Welcome to Dictionary", 
+          arabicMeaning: "مرحبًا بك في القاموس", 
+          exampleSentence: "Add your first word to see it here!"
+        );
+        return;
+      }
+      
+      // Use the first word for the widget
+      Map<String, dynamic> wordData = words.first;
+      String word = wordData['word'];
+      String arabicMeaning = wordData['meaning'];
+      
+      // Try to get an example sentence
+      String exampleSentence = "No example available.";
+      try {
+        int wordId = wordData['id'];
+        List<Map<String, dynamic>> examples = await fetchExampleSentences(wordId, 1);
+        if (examples.isNotEmpty) {
+          exampleSentence = examples.first['sentence'];
+        }
+      } catch (e) {
+        print('Error fetching example sentence: $e');
+        // Continue with default example sentence
+      }
+      
+      print('Updating widget with: $word, $arabicMeaning, $exampleSentence');
+      
+      // Update the widget with the data
+      await WidgetHelper.updateWidget(
+        word: word,
+        arabicMeaning: arabicMeaning,
+        exampleSentence: exampleSentence,
+      );
+      
+      print('Widget update completed');
+    } catch (e) {
+      print('Error updating widget: $e');
+      // Re-throw the error to handle it in the UI
+      rethrow;
+    }
   }
 }

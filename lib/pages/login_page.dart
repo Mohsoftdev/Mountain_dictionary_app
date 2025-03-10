@@ -1,6 +1,7 @@
 // Example usage in a login screen
 import 'package:flutter/material.dart';
-import 'package:mountain_other/api_service.dart';
+import '../api_service.dart';
+import '../config.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -10,7 +11,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _usernameOrEmailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final ApiService _apiService = ApiService(baseUrl: 'http://localhost:8000');
+  final ApiService _apiService = ApiService(baseUrl: Config.apiBaseUrl);
   bool _isPasswordVisible = false;
   bool _isLoading = false;
 
@@ -52,7 +53,7 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      print('Attempting login with: ${_usernameOrEmailController.text}'); // Debug print
+      print('Attempting login with: \\${_usernameOrEmailController.text}'); // Debug print
       await _apiService.login(_usernameOrEmailController.text, _passwordController.text);
       print('Login successful'); // Debug print
       
@@ -60,7 +61,7 @@ class _LoginPageState extends State<LoginPage> {
         Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
       }
     } catch (e) {
-      print('Login error in UI: $e'); // Debug print
+      print('Login error in UI: \\${e.toString()}'); // Debug print
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

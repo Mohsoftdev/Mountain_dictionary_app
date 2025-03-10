@@ -5,6 +5,9 @@ import 'package:mountain_other/pages/practice.dart';
 import 'package:mountain_other/pages/login_page.dart';
 import 'package:mountain_other/pages/register_page.dart';
 import 'package:mountain_other/api_service.dart';
+import '../config.dart';
+import 'dart:async';
+
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -17,12 +20,49 @@ class _HomeState extends State<Home> {
   bool isLoggedIn = false;
   int _wordCount = 0;
   bool _isLoading = false;
-  final ApiService _apiService = ApiService(baseUrl: 'http://127.0.0.1:8000');
+  final ApiService _apiService = ApiService(baseUrl: Config.apiBaseUrl);
+  String _currentWord = '';
+  String _exampleSentence = '';
+  String _arabicMeaning = '';
+  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
+    
+    // Update the widget when the app starts
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await ApiService(baseUrl: Config.apiBaseUrl).updateWidget();
+    });
+    
     _checkLoginStatus();
+    _fetchWordData();
+    _timer = Timer.periodic(Duration(seconds: 30), (timer) {
+      _fetchWordData();
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchWordData() async {
+    if (!isLoggedIn) return;
+    try {
+      final words = await _apiService.fetchWords();
+      if (words.isNotEmpty) {
+        final word = words[0]; // Assuming the first word for simplicity
+        setState(() {
+          _currentWord = word['word'];
+          _exampleSentence = word['example_sentence'] ?? 'No example available';
+          _arabicMeaning = word['arabic_meaning'] ?? 'No Arabic meaning available';
+        });
+      }
+    } catch (e) {
+      print('Error fetching word data: $e');
+    }
   }
 
   Future<void> _fetchWordCount() async {
@@ -278,6 +318,33 @@ class _HomeState extends State<Home> {
             ],
           ),
         ),
+      ),
+      // Add a floating action button to update the widget manually
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () async {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Updating home screen widget...'))
+          );
+          try {
+            await ApiService(baseUrl: Config.apiBaseUrl).updateWidget();
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Widget updated successfully!'),
+                backgroundColor: Colors.green,
+              )
+            );
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Widget update failed: $e'),
+                backgroundColor: Colors.red,
+              )
+            );
+          }
+        },
+        label: const Text('Update Widget'),
+        icon: const Icon(Icons.refresh),
+        backgroundColor: const Color(0xFF044D64),
       ),
     );
   }
